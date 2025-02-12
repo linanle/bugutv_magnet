@@ -1,0 +1,43 @@
+import requests
+from lxml import etree
+import re
+import time
+
+
+headers = {
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+}
+url="https://www.bugutv.org/4ktv"
+response=requests.get(url,headers=headers)
+
+html=etree.HTML(response.text)
+html_re=response.text
+
+page_num=html.xpath('//*[@id="main"]/div[2]/div/div/div/div[2]/span/text()')[0]     # 获取页码1/35
+match = int(re.search(r'/(\d+)', page_num).group(1))    # 用正则筛选出一个有35页
+i=1
+while i <= match:
+    page_url=f"https://www.bugutv.org/4ktv/page/{i}"
+    print(page_url)
+    i+=1
+    response=requests.get(page_url,headers=headers)
+    html=etree.HTML(response.text)
+    movie_url = html.xpath('//*[@id="main"]/div[2]/div/div/div/div[1]/div/article/div[2]/header/h2/a/@href')  # 获取连接
+    for url in movie_url:
+        response=requests.get(url,headers=headers)
+        html=etree.HTML(response.text)
+        re_html=response.text
+        movie_name=html.xpath('//h1[@class="entry-title"]/text()')[0]
+        # print(re_html)
+        req='<a href="magnet:.*?">(.*?)</a>'
+        magnet_list=re.findall(req,re_html)
+      
+        with open('布谷TV剧集磁力链接.txt','a+',encoding='utf-8') as f:
+            print(movie_name)
+            f.write(movie_name+'\n')
+        for a in magnet_list:
+            with open('布谷TV剧集磁力链接.txt','a+',encoding='utf-8') as f:
+                f.write(a+'\n')
+                print(a)
+        print("*" * 204+"\n")
+print(f'所有页面爬取完毕,一共{i}页!!')
